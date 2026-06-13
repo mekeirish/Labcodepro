@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Labcode — Component Sandbox</title>
+    
+    <!-- Polices -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deep: {
+                            900: '#0b0b0d',
+                            800: '#0f0f11',
+                            700: '#141418',
+                            600: '#16161a',
+                            500: '#1a1a1f',
+                        },
+                        cyber: {
+                            violet: '#8b5cf6',
+                            'violet-hover': '#7c3aed',
+                            amber: '#f59e0b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neu-dark': 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.6)',
+                        'neu-pressed': 'inset 0 2px 4px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.03)',
+                        'glow-violet': '0 0 15px rgba(139,92,246,0.3), 0 0 30px rgba(139,92,246,0.1)',
+                        'glow-amber': '0 0 10px rgba(245,158,11,0.3), 0 0 20px rgba(245,158,11,0.1)',
+                        'frame': '0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03)',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background: radial-gradient(ellipse at 50% 0%, #121218 0%, #0b0b0d 70%);
+            letter-spacing: -0.01em;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f11;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+        
+        .btn-press {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-press:active {
+            transform: scale(0.98);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.03);
+        }
+        
+        @keyframes pulse-violet {
+            0% { box-shadow: 0 0 8px rgba(139,92,246,0.3), 0 0 20px rgba(139,92,246,0.1); }
+            50% { box-shadow: 0 0 16px rgba(139,92,246,0.5), 0 0 36px rgba(139,92,246,0.2); }
+            100% { box-shadow: 0 0 8px rgba(139,92,246,0.3), 0 0 20px rgba(139,92,246,0.1); }
+        }
+        
+        .animate-pulse-violet {
+            animation: pulse-violet 2.2s infinite;
+        }
+        
+        textarea.editor-code {
+            tab-size: 2;
+            caret-color: #8b5cf6;
+        }
+        textarea.editor-code::selection {
+            background: rgba(139,92,246,0.35);
+            color: #fff;
+        }
+        
+        input:focus, textarea:focus {
+            box-shadow: 0 0 0 2px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        
+        /* Console log styles */
+        .log-err { 
+            color: #ef4444; 
+            border-left: 2px solid #ef4444; 
+            padding-left: 10px; 
+            margin-left: 2px;
+        }
+        .log-warn { 
+            color: #f59e0b; 
+            border-left: 2px solid #f59e0b; 
+            padding-left: 10px; 
+            margin-left: 2px;
+        }
+        .log-info { 
+            color: #8b5cf6; 
+        }
+    </style>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b0b0d">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body class="font-sans text-zinc-100 antialiased min-h-screen flex flex-col p-4 md:p-6">
+
+    <!-- Conteneur principal -->
+    <div class="w-full max-w-[1440px] mx-auto flex flex-col flex-1">
+
+        <!-- Barre d'onglets -->
+        <div class="flex gap-2 p-1.5 bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl mb-6 
+                    shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] max-w-md">
+            <button class="tab-btn active flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-[0.1em] 
+                           transition-all duration-200 bg-deep-800 text-cyber-amber 
+                           shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_2px_8px_rgba(0,0,0,0.5)]"
+                    onclick="switchTab('editor-tab')">
+                🧪 Sandbox
+            </button>
+            <button class="tab-btn flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-[0.1em] 
+                           text-zinc-600 hover:text-zinc-400 transition-all duration-200"
+                    onclick="switchTab('extractor-tab')">
+                ✂️ Extractor
+            </button>
+        </div>
+
+        <!-- Onglet Sandbox -->
+        <div id="editor-tab" class="tab-content active flex flex-col lg:flex-row gap-5 flex-1">
+            
+            <!-- Panneau gauche : Éditeur -->
+            <div class="lg:w-1/2 flex flex-col gap-4">
+                <div class="bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl p-5 shadow-neu-dark flex flex-col flex-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 bg-cyber-violet rounded-full shadow-glow-violet"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Éditeur de Code</span>
+                    </div>
+                    <textarea id="sandboxCode" 
+                              placeholder="Colle ton code HTML/CSS/JS ici pour le tester instantanément..." 
+                              oninput="autoSaveSandbox()"
+                              class="editor-code flex-1 w-full bg-deep-800 border border-zinc-800/40 rounded-xl p-4 
+                                     text-zinc-300 font-mono text-[13px] leading-[22px] resize-none
+                                     shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] 
+                                     placeholder:text-zinc-700 focus:text-zinc-100
+                                     focus:outline-none transition-all duration-200 min-h-[320px]"></textarea>
+                    <div class="flex gap-3 mt-4">
+                        <button class="btn-press w-[30%] py-3.5 bg-deep-500 border border-zinc-700/40 rounded-xl 
+                                       text-zinc-400 hover:text-white font-semibold text-xs uppercase tracking-[0.1em]
+                                       transition-all duration-200 flex items-center justify-center gap-1.5"
+                                onclick="pasteClipboard()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                            </svg>
+                            Coller
+                        </button>
+                        <button class="btn-press flex-1 py-3.5 bg-cyber-violet rounded-xl text-white font-bold text-sm uppercase tracking-[0.12em]
+                                       shadow-glow-violet animate-pulse-violet hover:bg-cyber-violet-hover
+                                       transition-all duration-200 flex items-center justify-center gap-2"
+                                onclick="runSandbox()">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            Exécuter dans le Lab
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panneau droit : Preview + Console -->
+            <div class="lg:w-1/2 flex flex-col gap-4">
+                
+                <!-- Preview -->
+                <div class="bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl p-4 shadow-neu-dark flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                            <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Rendu Temps Réel</span>
+                        </div>
+                        <span class="text-[10px] text-zinc-700 font-mono">iframe sandbox</span>
+                    </div>
+                    <div class="relative w-full h-[50vh] lg:h-[42vh] rounded-xl overflow-hidden 
+                                shadow-frame bg-white" id="previewContainer">
+                        <iframe id="labPreview" class="w-full h-full border-none bg-white"></iframe>
+                        <button class="absolute bottom-3 right-3 w-10 h-10 rounded-full 
+                                       bg-deep-800/90 backdrop-blur-sm border border-zinc-700/40
+                                       text-cyber-amber hover:text-white text-lg font-bold
+                                       flex items-center justify-center cursor-pointer
+                                       shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.7)]
+                                       transition-all duration-200 z-10 btn-press"
+                                id="fsBtn" onclick="toggleFullscreen()" title="Plein écran">
+                            ⛶
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Console -->
+                <div class="bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl p-4 shadow-neu-dark flex flex-col flex-1">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-cyber-amber rounded-full shadow-glow-amber"></span>
+                            <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Console de Debug</span>
+                        </div>
+                        <span class="text-[10px] text-zinc-700 font-mono" id="consoleCounter">0 entrées</span>
+                    </div>
+                    <div id="consoleLog" 
+                         class="flex-1 bg-deep-800 border border-zinc-800/40 rounded-xl p-4 
+                                text-xs font-mono leading-relaxed overflow-y-auto
+                                shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] min-h-[140px] max-h-[200px]">
+                        <div class="text-zinc-600">> Console prête. En attente d'exécution...</div>
+                    </div>
+                    <button class="btn-press w-full mt-3 py-2.5 bg-transparent border border-zinc-800/40 rounded-xl
+                                   text-zinc-600 hover:text-red-400 text-[10px] uppercase tracking-[0.1em] font-medium
+                                   transition-colors duration-200"
+                            onclick="clearConsole()">
+                        🗑️ Effacer la Console
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Extractor -->
+        <div id="extractor-tab" class="tab-content hidden flex flex-col lg:flex-row gap-5 flex-1">
+            
+            <!-- Panneau gauche : Source -->
+            <div class="lg:w-1/2 flex flex-col gap-4">
+                <div class="bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl p-5 shadow-neu-dark">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 bg-cyber-violet rounded-full shadow-glow-violet"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Extraction de Code Source</span>
+                    </div>
+                    <textarea id="rawSource" rows="6" placeholder="Colle un code HTML complet ici pour en extraire des parties spécifiques..."
+                              class="editor-code w-full bg-deep-800 border border-zinc-800/40 rounded-xl p-4 
+                                     text-zinc-300 font-mono text-[13px] leading-[22px] resize-none
+                                     shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] 
+                                     placeholder:text-zinc-700 focus:text-zinc-100
+                                     focus:outline-none transition-all duration-200 mb-4"></textarea>
+                    <div class="space-y-2.5">
+                        <button class="btn-press w-full py-3.5 bg-deep-500 border border-zinc-700/40 rounded-xl
+                                       text-cyber-violet font-semibold text-xs uppercase tracking-[0.1em]
+                                       hover:bg-cyber-violet/10 hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
+                                onclick="extractBlock('style')">
+                            🎨 Extraire les Styles (CSS)
+                        </button>
+                        <button class="btn-press w-full py-3.5 bg-deep-500 border border-zinc-700/40 rounded-xl
+                                       text-cyber-violet font-semibold text-xs uppercase tracking-[0.1em]
+                                       hover:bg-cyber-violet/10 hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
+                                onclick="extractBlock('script')">
+                            ⚙️ Extraire les Scripts (JS)
+                        </button>
+                        <button class="btn-press w-full py-3.5 bg-deep-500 border border-zinc-700/40 rounded-xl
+                                       text-cyber-violet font-semibold text-xs uppercase tracking-[0.1em]
+                                       hover:bg-cyber-violet/10 hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
+                                onclick="extractBlock('body')">
+                            📱 Extraire le Corps (Body)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panneau droit : Résultat -->
+            <div class="lg:w-1/2 flex flex-col gap-4">
+                <div class="bg-deep-600/80 backdrop-blur-sm border border-zinc-800/60 rounded-2xl p-5 shadow-neu-dark flex flex-col flex-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Résultat de l'Extraction</span>
+                    </div>
+                    <textarea id="extractionResult" readonly placeholder="Le bloc extrait apparaîtra ici..."
+                              class="editor-code flex-1 w-full bg-deep-800 border border-zinc-800/40 rounded-xl p-4 
+                                     text-zinc-300 font-mono text-[13px] leading-[22px] resize-none
+                                     shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] 
+                                     placeholder:text-zinc-700
+                                     focus:outline-none transition-all duration-200 min-h-[200px]"></textarea>
+                    <button class="btn-press w-full mt-4 py-3.5 bg-cyber-amber rounded-xl text-deep-900 font-bold text-sm uppercase tracking-[0.12em]
+                                   shadow-glow-amber hover:bg-amber-400 transition-all duration-200 flex items-center justify-center gap-2"
+                            onclick="copyExtraction()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                        </svg>
+                        Copier le Composant
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature -->
+        <div class="text-center pt-10 pb-4 mt-auto">
+            <p class="text-xs text-zinc-800 tracking-[0.15em] font-medium uppercase">
+                Made by Brahim Laiche <span class="text-zinc-700">2026</span> Paris
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // LOGIQUE MÉTIER — STRICTEMENT PRÉSERVÉE
+        // =============================================
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('flex'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active', 'bg-deep-800', 'text-cyber-amber', 'shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_2px_8px_rgba(0,0,0,0.5)]');
+                b.classList.add('text-zinc-600');
+            });
+            
+            const target = document.getElementById(tabId);
+            target.classList.remove('hidden');
+            if (tabId === 'editor-tab') {
+                target.classList.add('flex', 'flex-col', 'lg:flex-row');
+            } else {
+                target.classList.add('flex', 'flex-col', 'lg:flex-row');
+            }
+            
+            event.target.classList.add('active', 'bg-deep-800', 'text-cyber-amber', 'shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_2px_8px_rgba(0,0,0,0.5)]');
+            event.target.classList.remove('text-zinc-600');
+        }
+
+        async function pasteClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                const textarea = document.getElementById('sandboxCode');
+                textarea.value = text;
+                autoSaveSandbox();
+                consoleLogger("Code collé avec succès.");
+            } catch (err) {
+                consoleLogger("Erreur accès presse-papiers", "error");
+            }
+        }
+
+        const consoleLogger = (msg, type = "info") => {
+            const consoleEl = document.getElementById('consoleLog');
+            if (!consoleEl) return;
+            let classType = "log-info";
+            let prefix = "> ";
+            if (type === "error") { classType = "log-err"; prefix = "❌ Error: "; }
+            if (type === "warn") { classType = "log-warn"; prefix = "⚠️ Warn: "; }
+            consoleEl.innerHTML += `<div class="${classType}">${prefix}${msg}</div>`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+            
+            // Mise à jour du compteur
+            const counter = document.getElementById('consoleCounter');
+            if (counter) {
+                const lines = consoleEl.querySelectorAll('div').length;
+                counter.textContent = `${lines} entrée${lines > 1 ? 's' : ''}`;
+            }
+        };
+
+        function clearConsole() { 
+            document.getElementById('consoleLog').innerHTML = "<div class=\"text-zinc-600\">> Console vidée.</div>"; 
+            const counter = document.getElementById('consoleCounter');
+            if (counter) counter.textContent = '0 entrée';
+        }
+
+        function runSandbox() {
+            const code = document.getElementById('sandboxCode').value;
+            const iframe = document.getElementById('labPreview');
+            clearConsole();
+            consoleLogger("Compilation locale du composant...", "warn");
+
+            const hookScript = `<script>window.onerror = function(m,s,l,c,e){window.parent.postMessage({type:'error',data:m+" (Ligne "+l+")"},'*');return false;}; console.log = function(...args){window.parent.postMessage({type:'log',data:args.join(' ')},'*');};<\/script>`;
+
+            let finalCode = code.includes('<head>') ? code.replace('<head>', '<head>' + hookScript) : hookScript + code;
+            const blob = new Blob([finalCode], { type: 'text/html' });
+            iframe.src = URL.createObjectURL(blob);
+            
+            const container = document.getElementById('previewContainer');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (container.requestFullscreen) container.requestFullscreen();
+                else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+            }
+        }
+
+        window.addEventListener('message', function(e) { if (e.data && e.data.type) consoleLogger(e.data.data, e.data.type); });
+
+        function toggleFullscreen() {
+            const container = document.getElementById('previewContainer');
+            const btn = document.getElementById('fsBtn');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (container.requestFullscreen) container.requestFullscreen();
+                else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+                btn.style.color = '#ef4444';
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                btn.style.color = '#f59e0b';
+            }
+        }
+
+        function onFsChange() {
+            const btn = document.getElementById('fsBtn');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) btn.style.color = '#f59e0b';
+            else btn.style.color = '#ef4444';
+        }
+        document.addEventListener('fullscreenchange', onFsChange);
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+
+        function autoSaveSandbox() { localStorage.setItem('sniper_sandbox_cache', document.getElementById('sandboxCode').value); }
+
+        function extractBlock(type) {
+            const source = document.getElementById('rawSource').value;
+            const resultArea = document.getElementById('extractionResult');
+            if(!source) { alert("Veuillez coller du code source au préalable."); return; }
+            let regex = type === 'style' ? /<style[^>]*>([\s\S]*?)<\/style>/gi : type === 'script' ? /<script[^>]*>([\s\S]*?)<\/script>/gi : /<body[^>]*>([\s\S]*?)<\/body>/gi;
+            let matches = []; let match;
+            while ((match = regex.exec(source)) !== null) matches.push(match[1].trim());
+            if (matches.length > 0) { resultArea.value = matches.join("\n\n/* --- Nouveau Bloc --- */\n\n"); }
+            else { alert(`Aucun bloc <${type}> trouvé.`); }
+        }
+
+        function copyExtraction() {
+            const res = document.getElementById('extractionResult');
+            if(!res.value) return;
+            navigator.clipboard.writeText(res.value);
+            alert("Composant copié !");
+        }
+
+        window.onload = function() {
+            const cached = localStorage.getItem('sniper_sandbox_cache');
+            if (cached) document.getElementById('sandboxCode').value = cached;
+        };
+    </script>
+
+    <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
